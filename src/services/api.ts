@@ -1,4 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
+import { VolunteerEvent } from '../types/Event';
+import { User } from '../types/User';
+import { getFromCache } from './caching';
 
 const api = axios.create({
     // Before running your 'json-server', get your computer's IP address and
@@ -14,6 +17,32 @@ const api = axios.create({
     baseURL: 'http://0.0.0.0:3333',
 });
 
+// Attach the logged-in user's token to every request (json-server-auth expects it on protected routes).
+api.interceptors.request.use(async (config) => {
+    try {
+        const token = await getFromCache<string>('accessToken');
+        if (token) config.headers = { ...config.headers, Authorization: `Bearer ${token}` } as any;
+    } catch {
+        // not logged in yet — send the request without a token
+    }
+    return config;
+});
+
 export const authenticateUser = (email: string, password: string): Promise<AxiosResponse> => {
     return api.post(`/login`, { email, password });
+};
+
+export const getEvents = (): Promise<AxiosResponse<VolunteerEvent[]>> => {
+    return api.get('/events');
+};
+
+export const getUser = (userId: string): Promise<AxiosResponse<User>> => {
+    return api.get(`/users/${userId}`);
+};
+
+export const updateEventVolunteers = (
+    eventId: string,
+    volunteersIds: string[]
+): Promise<AxiosResponse<VolunteerEvent>> => {
+    return api.patch(`/events/${eventId}`, { volunteersIds });
 };

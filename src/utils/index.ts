@@ -26,7 +26,15 @@ export const formatAMPM = (date: Date): string => {
     return strTime;
 };
 
-export const addHours = (dateTime: Date, hoursToAdd: number) => {
+// e.g. "Wed, Jan 11" — written by hand so it doesn't depend on Intl support on Android.
+export const formatShortDate = (date: Date): string => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const d = new Date(date);
+    return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+};
+
+export const addHours =(dateTime: Date, hoursToAdd: number) => {
     const milisecondsToAdd = hoursToAdd * 60 * 60 * 1000;
     const newDate = new Date(dateTime);
     return new Date(newDate.setTime(newDate.getTime() + milisecondsToAdd));
