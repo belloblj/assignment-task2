@@ -46,12 +46,26 @@ export default function EventDetails({ navigation, route }: StackScreenProps<any
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Yes',
-                onPress: () => {
+                onPress: async () => {
                     setIsSaving(true);
-                    api.updateEventVolunteers(event.id, [...event.volunteersIds, currentUser.id])
-                        .then((response) => setEvent(response.data))
-                        .catch(() => Alert.alert('Error', 'Could not apply to this event. Please try again.'))
-                        .finally(() => setIsSaving(false));
+                    try {
+                        // Re-read the event first so we don't overwrite volunteers who joined
+                        // after this screen was opened, and so we never over-fill the team.
+                        const { data: latest } = await api.getEvent(event.id);
+                        if (getEventStatus(latest, currentUser.id) !== 'open') {
+                            setEvent(latest);
+                            return;
+                        }
+                        const response = await api.updateEventVolunteers(latest.id, [
+                            ...latest.volunteersIds,
+                            currentUser.id,
+                        ]);
+                        setEvent(response.data);
+                    } catch {
+                        Alert.alert('Error', 'Could not apply to this event. Please try again.');
+                    } finally {
+                        setIsSaving(false);
+                    }
                 },
             },
         ]);
@@ -72,7 +86,7 @@ export default function EventDetails({ navigation, route }: StackScreenProps<any
 
     const handleCall = () => organizer && openUrl(`tel:${organizer.mobile}`);
     const handleText = () => organizer && openUrl(`sms:${organizer.mobile}`);
-    const handleShowRoutes = () => openUrl(getMapsUrl(event.position));
+    const handleShowRoutes = () => openUrl(getMapsUrl(event.position, event.name));
 
     const showShareButton = status !== 'full';
     const showVolunteerButton = status === 'open';
@@ -115,11 +129,18 @@ export default function EventDetails({ navigation, route }: StackScreenProps<any
                     {(showShareButton || showVolunteerButton || showContactButtons) && <Spacer size={16} />}
                     <View style={styles.row}>
                         {showShareButton && (
-                            <BigButton label="Share" color={Colors.blue} featherIconName="share-2" onPress={handleShare} />
+                            <BigButton
+                                style={styles.actionButton}
+                                label="Share"
+                                color={Colors.blue}
+                                featherIconName="share-2"
+                                onPress={handleShare}
+                            />
                         )}
                         {showShareButton && (showVolunteerButton || showContactButtons) && <View style={styles.gap} />}
                         {showVolunteerButton && (
                             <BigButton
+                                style={styles.actionButton}
                                 label="Volunteer"
                                 color={Colors.orange}
                                 featherIconName="plus"
@@ -129,6 +150,7 @@ export default function EventDetails({ navigation, route }: StackScreenProps<any
                         {showContactButtons && (
                             <>
                                 <BigButton
+                                    style={styles.actionButton}
                                     label="Call"
                                     color={Colors.green}
                                     featherIconName="phone"
@@ -137,6 +159,7 @@ export default function EventDetails({ navigation, route }: StackScreenProps<any
                                 />
                                 <View style={styles.gap} />
                                 <BigButton
+                                    style={styles.actionButton}
                                     label="Text"
                                     color={Colors.green}
                                     featherIconName="message-circle"
@@ -220,6 +243,10 @@ const styles = StyleSheet.create({
     },
     gap: {
         width: 16,
+    },
+    // less side padding so three buttons fit in one row (e.g. Share / Call / Text)
+    actionButton: {
+        paddingHorizontal: 12,
     },
     divider: {
         height: 1,

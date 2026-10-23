@@ -20,7 +20,7 @@ export const formatAMPM = (date: Date): string => {
     const hours = dateObj.getHours();
     const minutes = dateObj.getMinutes();
     const ampm = hours >= 12 ? 'pm' : 'am';
-    const newHours = hours % 12 ? hours : 12; // the hour '0' should be '12'
+    const newHours = hours % 12 || 12; // 13-23 → 1-11, and the hour '0' should be '12'
     const newMinutes = minutes < 10 ? '0' + minutes : minutes;
     var strTime = newHours + ':' + newMinutes + ' ' + ampm;
     return strTime;
@@ -81,10 +81,10 @@ export const getEnvironentVariable = (variableName: string) => {
     }
 };
 
-export const getMapsUrl = (coordinates: LatLng): string => {
+export const getMapsUrl = (coordinates: LatLng, pinLabel = 'Volunteam event'): string => {
     const { latitude, longitude } = coordinates;
     const latLng = `${latitude},${longitude}`;
-    const label = 'Custom Label';
+    const label = encodeURIComponent(pinLabel);
     return Platform.OS === 'ios' ? `maps:0,0?q=${label}@${latLng}` : `geo:0,0?q=${latLng}(${label})`;
 };
 
