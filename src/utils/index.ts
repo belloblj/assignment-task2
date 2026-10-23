@@ -20,13 +20,21 @@ export const formatAMPM = (date: Date): string => {
     const hours = dateObj.getHours();
     const minutes = dateObj.getMinutes();
     const ampm = hours >= 12 ? 'pm' : 'am';
-    const newHours = hours % 12 ? hours : 12; // the hour '0' should be '12'
+    const newHours = hours % 12 || 12; // 13-23 → 1-11, and the hour '0' should be '12'
     const newMinutes = minutes < 10 ? '0' + minutes : minutes;
     var strTime = newHours + ':' + newMinutes + ' ' + ampm;
     return strTime;
 };
 
-export const addHours = (dateTime: Date, hoursToAdd: number) => {
+// e.g. "Wed, Jan 11" — written by hand so it doesn't depend on Intl support on Android.
+export const formatShortDate = (date: Date): string => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const d = new Date(date);
+    return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+};
+
+export const addHours =(dateTime: Date, hoursToAdd: number) => {
     const milisecondsToAdd = hoursToAdd * 60 * 60 * 1000;
     const newDate = new Date(dateTime);
     return new Date(newDate.setTime(newDate.getTime() + milisecondsToAdd));
@@ -73,10 +81,10 @@ export const getEnvironentVariable = (variableName: string) => {
     }
 };
 
-export const getMapsUrl = (coordinates: LatLng): string => {
+export const getMapsUrl = (coordinates: LatLng, pinLabel = 'Volunteam event'): string => {
     const { latitude, longitude } = coordinates;
     const latLng = `${latitude},${longitude}`;
-    const label = 'Custom Label';
+    const label = encodeURIComponent(pinLabel);
     return Platform.OS === 'ios' ? `maps:0,0?q=${label}@${latLng}` : `geo:0,0?q=${latLng}(${label})`;
 };
 
